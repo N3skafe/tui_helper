@@ -165,6 +165,10 @@ Linux:
 
 `test_completion.py` checks candidates, descriptions, order, and the replacement position. `test_execution.py` checks command classification, results, failures, missing commands, a persistent `cd`, and that accepting a completion does not execute it. Neither opens an interactive terminal. Typing in Windows Terminal or a Linux terminal, resizing the window, and Ctrl+C against a real console are not covered by these tests.
 
+## License
+
+This project is licensed under the MIT License. See `LICENSE`. You may use, modify, and redistribute it if that copyright notice stays with the copy.
+
 ---
 
 # 한국어
@@ -333,3 +337,7 @@ Linux:
 ```
 
 `test_completion.py`는 후보, 설명, 순서, 치환 위치를 확인합니다. `test_execution.py`는 명령 분류, 실행 결과, 실패와 없는 명령, `cd` 유지, 완성 수용이 실행되지 않는 것을 확인합니다. 둘 다 대화형 터미널을 열지 않습니다. Windows Terminal이나 Linux 터미널에서 직접 입력하는 동작, 창 크기 변경, 실제 콘솔에서 실행 중 Ctrl+C는 이 테스트로 확인하지 않습니다.
+
+## 라이선스
+
+이 프로젝트는 MIT License입니다. `LICENSE` 파일을 보세요. 저작권 표시를 남기면 사용, 수정, 재배포할 수 있습니다.
