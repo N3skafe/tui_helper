@@ -4,11 +4,35 @@ A terminal prompt that lists candidates and a short description under the input 
 
 The program UI and Windows command text are English, including on a Korean Windows install.
 
-Python 3.10 or newer is required. The only install dependency is `prompt_toolkit`. Commands run through the standard-library `subprocess` module.
+Download `tui.exe` if you only want to run the program. Python is not required for that file. Building or changing the source needs Python 3.10 or newer and `prompt_toolkit`.
 
-## Get the project
+## Download the exe
 
-Copy or download this project folder, then open a terminal in that folder.
+Open the latest release and download `tui.exe`:
+
+https://github.com/N3skafe/tui_helper/releases
+
+Save it in any folder. No clone, virtual environment, or pip install is required.
+
+cmd, in that folder:
+
+```bat
+tui
+```
+
+PowerShell, in that folder:
+
+```powershell
+.\tui.exe
+```
+
+PowerShell does not run a program in the current folder unless the name starts with `.\`. After the exe is on your user PATH, both cmd and PowerShell accept `tui` from any folder. Copy `tui.exe` to `%LOCALAPPDATA%\tui_helper` if that directory is already on PATH, then open a new terminal.
+
+The exe is attached when a GitHub release is published. To build it on a Windows machine instead, install the source setup below and run `.\build.ps1`. The result is `dist\tui.exe`.
+
+## Get the source
+
+Copy or download this project folder, then open a terminal in that folder. Use this path when you want to change the program.
 
 ## Setup
 
@@ -177,11 +201,35 @@ This project is licensed under the MIT License. See `LICENSE`. You may use, modi
 
 프로그램 화면과 Windows 명령 설명은 한글 Windows에서도 영어입니다.
 
-Python 3.10 이상이 필요합니다. 설치 의존성은 `prompt_toolkit` 하나이고, 명령 실행은 표준 라이브러리 `subprocess`만 사용합니다.
+실행만 할 때는 `tui.exe`를 받으면 됩니다. 그 파일에는 Python이 필요 없습니다. 소스를 빌드하거나 수정할 때만 Python 3.10 이상과 `prompt_toolkit`가 필요합니다.
 
-## 프로젝트 받기
+## exe 받기
 
-이 프로젝트 폴더를 복사하거나 내려받은 뒤, 그 폴더에서 터미널을 엽니다.
+최신 릴리스에서 `tui.exe`를 받습니다.
+
+https://github.com/N3skafe/tui_helper/releases
+
+아무 폴더에 저장합니다. 저장소를 클론하거나 가상환경, pip 설치는 필요 없습니다.
+
+cmd, 그 폴더에서:
+
+```bat
+tui
+```
+
+PowerShell, 그 폴더에서:
+
+```powershell
+.\tui.exe
+```
+
+PowerShell은 이름이 `.\`로 시작하지 않으면 현재 폴더의 프로그램을 실행하지 않습니다. exe가 사용자 PATH에 있으면 cmd와 PowerShell 모두 어느 폴더에서나 `tui`로 켭니다. 그 디렉터리가 이미 PATH에 있다면 `tui.exe`를 `%LOCALAPPDATA%\tui_helper`에 복사한 뒤 터미널을 새로 엽니다.
+
+exe는 GitHub 릴리스를 게시할 때 첨부됩니다. Windows에서 직접 만들려면 아래 소스 준비를 마친 뒤 `.\build.ps1`을 실행합니다. 결과는 `dist\tui.exe`입니다.
+
+## 소스 받기
+
+프로그램을 수정하려면 이 프로젝트 폴더를 복사하거나 내려받은 뒤, 그 폴더에서 터미널을 엽니다.
 
 ## 준비
 
