@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
@@ -503,8 +502,31 @@ def _command_help(command: str) -> str:
     return _help_text_cache[key]
 
 
+def _git_executable() -> str | None:
+    """git from PATH, skipping a copy in the current directory."""
+    try:
+        cwd = Path.cwd().resolve()
+    except OSError:
+        cwd = None
+    names = ("git.exe", "git.cmd", "git") if os.name == "nt" else ("git",)
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not directory:
+            continue
+        try:
+            resolved = Path(directory).resolve()
+        except OSError:
+            continue
+        if cwd is not None and resolved == cwd:
+            continue
+        for name in names:
+            candidate = resolved / name
+            if candidate.is_file():
+                return str(candidate)
+    return None
+
+
 def _run_git(*args: str, cwd: Path | str | None) -> str:
-    executable = shutil.which("git")
+    executable = _git_executable()
     if executable is None:
         return ""
     prefer_english()

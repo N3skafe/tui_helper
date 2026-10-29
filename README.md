@@ -12,7 +12,7 @@ Open the latest release and download `tui.exe`:
 
 https://github.com/N3skafe/tui_helper/releases
 
-Save it in any folder. No clone, virtual environment, or pip install is required.
+Save it in any folder. No clone, virtual environment, or pip install is required. The release also includes `tui.exe.sha256`, the SHA-256 of that file.
 
 cmd, in that folder:
 
@@ -110,7 +110,7 @@ The prompt is the working directory plus `>`. Example: `W:\work> `. `help` print
 
 prompt_toolkit is idle after `prompt()` returns the line. The command then owns the terminal. The prompt opens again when the command finishes.
 
-History is stored in `.tui_helper_history` in the home directory. If that file cannot be created or written, history stays in memory for this run.
+History is stored in `.tui_helper_history` in the home directory. A line that starts with a space is not saved. Passwords typed in a line stay in that file as plain text. If the file cannot be created or written, history stays in memory for this run.
 
 ## Commands
 
@@ -141,7 +141,7 @@ One name is kept when several sources share it, in this order: this program, cmd
 
 Typing only `netsh` or `diskpart` and pressing Enter does not hand the terminal to that program. The prompt becomes `netsh>` or `diskpart>`, and the next words continue there, as in `wlan show drivers` or `list disk`. `exit` returns to the original prompt. A context such as `netsh wlan` changes the prompt to `netsh wlan>`. netsh help is read once per context. `diskpart` needs an administrator to read disks. This program does not open a UAC prompt. `list` without that permission prints `administrator permission is required` and leaves the prompt in place. `list disk` works when `python main.py` is started from an elevated terminal.
 
-A token that starts with `/` or `-`, such as `dir /b` or `sfc /sca`, is read from that command's `/?` help. `docker`, `npm`, `cd`, and `open` do not use that list. `sfc` prints its switches only on a real console, so `/SCANNOW`, `/VERIFYONLY`, `/SCANFILE=`, and `/VERIFYFILE=` are stored separately. Completion does not search for similar spellings, and it does not run the command the user is typing. The PowerShell name list is read once, on the first search.
+A token that starts with `/` or `-`, such as `dir /b` or `sfc /sca`, is read from that command's `/?` help when the program is in System32 or is a cmd builtin. Other names use a fixed list, or nothing. `docker`, `npm`, `cd`, and `open` do not use that list. `sfc` prints its switches only on a real console, so `/SCANNOW`, `/VERIFYONLY`, `/SCANFILE=`, and `/VERIFYFILE=` are stored separately. Completion does not search for similar spellings, and it does not run the command the user is typing. The PowerShell name list is read once, on the first search.
 
 After submit, only `help`, `clear`, `exit`, and `cd` are handled here. Every other line goes to the shell.
 
@@ -209,7 +209,7 @@ This project is licensed under the MIT License. See `LICENSE`. You may use, modi
 
 https://github.com/N3skafe/tui_helper/releases
 
-아무 폴더에 저장합니다. 저장소를 클론하거나 가상환경, pip 설치는 필요 없습니다.
+아무 폴더에 저장합니다. 저장소를 클론하거나 가상환경, pip 설치는 필요 없습니다. 릴리스에는 그 파일의 SHA-256인 `tui.exe.sha256`도 있습니다.
 
 cmd, 그 폴더에서:
 
@@ -307,7 +307,7 @@ Linux:
 
 prompt_toolkit는 `prompt()`가 줄을 돌려준 뒤 멈춰 있습니다. 그 다음에 명령이 터미널을 사용합니다. 명령이 끝나면 프롬프트가 다시 열립니다.
 
-입력 기록은 홈 디렉터리의 `.tui_helper_history`에 저장합니다. 그 파일을 만들거나 쓸 수 없으면 이번 실행 동안만 메모리에 둡니다.
+입력 기록은 홈 디렉터리의 `.tui_helper_history`에 저장합니다. 공백으로 시작하는 줄은 저장하지 않습니다. 줄에 친 암호는 그 파일에 평문으로 남습니다. 파일을 만들거나 쓸 수 없으면 이번 실행 동안만 메모리에 둡니다.
 
 ## 명령
 
@@ -338,7 +338,7 @@ Windows에서 첫 단어를 치면 다음도 앞글자로 맞습니다.
 
 `netsh`나 `diskpart`만 입력하고 Enter를 누르면 그 프로그램으로 터미널을 넘기지 않습니다. 프롬프트가 `netsh>` 또는 `diskpart>`로 바뀌고, `wlan show drivers`나 `list disk`처럼 다음 단어가 이어집니다. `exit`로 원래 프롬프트에 돌아옵니다. `netsh wlan`처럼 컨텍스트만 바꾸면 프롬프트가 `netsh wlan>`가 됩니다. netsh 도움말은 단계마다 한 번만 읽습니다. `diskpart`는 디스크를 읽으려면 관리자 권한이 필요합니다. 이 프로그램은 UAC 창을 띄우지 않습니다. 권한 없이 `list`를 치면 `administrator permission is required`를 출력하고 프롬프트는 남습니다. 관리자 터미널에서 `python main.py`를 실행하면 `list disk`가 동작합니다.
 
-`dir /b`, `sfc /sca`처럼 `/` 또는 `-`로 시작하는 토큰은 그 명령의 `/?` 도움말에서 읽습니다. `docker`, `npm`, `cd`, `open`은 이 목록을 쓰지 않습니다. `sfc`는 스위치가 실제 콘솔에만 나와서 `/SCANNOW`, `/VERIFYONLY`, `/SCANFILE=`, `/VERIFYFILE=`를 따로 넣었습니다. 비슷한 글자 검색은 하지 않고, 목록을 만드는 동안 사용자가 친 명령은 실행하지 않습니다. PowerShell 이름 목록은 첫 검색 때 한 번만 읽습니다.
+`dir /b`, `sfc /sca`처럼 `/` 또는 `-`로 시작하는 토큰은 그 프로그램이 System32에 있거나 cmd 내장 명령일 때 `/?` 도움말에서 읽습니다. 그 외 이름은 고정 목록만 쓰거나 비워 둡니다. `docker`, `npm`, `cd`, `open`은 이 목록을 쓰지 않습니다. `sfc`는 스위치가 실제 콘솔에만 나와서 `/SCANNOW`, `/VERIFYONLY`, `/SCANFILE=`, `/VERIFYFILE=`를 따로 넣었습니다. 비슷한 글자 검색은 하지 않고, 목록을 만드는 동안 사용자가 친 명령은 실행하지 않습니다. PowerShell 이름 목록은 첫 검색 때 한 번만 읽습니다.
 
 제출하면 `help`, `clear`, `exit`, `cd`만 이 프로그램이 처리합니다. 나머지는 셸로 갑니다.
 

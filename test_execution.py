@@ -16,8 +16,10 @@ from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
 
 from completion import CommandCompleter, apply_completion
+from commands import command_switches, system_executable
 from execute import CommandResult, classify, format_status, run_shell, shell_launch
 from main import (
+    SafeFileHistory,
     change_directory,
     diskpart_body,
     handle_line,
@@ -132,7 +134,7 @@ class DispatchTests(unittest.TestCase):
         windows = shell_launch('echo keep "quotes"', platform="nt")
         self.assertTrue(windows.executable.lower().endswith("cmd.exe"))
         self.assertIsNone(windows.argv)
-        self.assertIn("/d /c", windows.command_line)
+        self.assertIn("/d /s /c", windows.command_line)
         self.assertTrue(windows.command_line.endswith('"echo keep "quotes""'))
         self.assertNotIn("powershell", windows.command_line.casefold())
 
@@ -155,6 +157,46 @@ class DispatchTests(unittest.TestCase):
             )
             cmd_program = shell_launch("netsh", platform="nt")
             self.assertTrue(cmd_program.executable.lower().endswith("cmd.exe"))
+
+    @unittest.skipUnless(os.name == "nt", "cmd quote handling is Windows-only")
+    def test_cmd_keeps_quotes_inside_the_line(self):
+        result = run_shell('echo keep "quotes"', capture=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('keep "quotes"', result.stdout)
+        self.assertNotIn("\\", result.stdout)
+
+    @unittest.skipUnless(os.name == "nt", "System32 is Windows-only")
+    def test_system_executable_ignores_a_fake_system_root(self):
+        with mock.patch.dict(os.environ, {"SystemRoot": r"C:\fake-windows"}):
+            path = system_executable("cmd.exe")
+        self.assertFalse(path.lower().startswith(r"c:\fake-windows"))
+        self.assertTrue(path.lower().endswith("\\cmd.exe"))
+        self.assertTrue(os.path.isfile(path))
+
+    def test_unknown_switch_lookup_does_not_run_a_program(self):
+        with mock.patch("commands.subprocess.run") as run:
+            self.assertEqual(command_switches("zzzqqq-no-such-tui"), [])
+        run.assert_not_called()
+
+    def test_leading_space_is_not_stored(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name) / "history"
+        history = SafeFileHistory(path)
+        history.append_string(" secret-token")
+        history.append_string("echo hi")
+        text = path.read_text(encoding="utf-8")
+        self.assertNotIn("secret-token", text)
+        self.assertIn("echo hi", text)
+
+    def test_diskpart_mentions_admin_when_already_elevated(self):
+        with (
+            mock.patch("main.is_windows_admin", return_value=True),
+            mock.patch("main.subprocess.run", return_value=mock.Mock(returncode=0)),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            run_diskpart_script("list disk")
+        self.assertIn("administrator", stdout.getvalue().casefold())
 
 
 class ExecutionTests(unittest.TestCase):

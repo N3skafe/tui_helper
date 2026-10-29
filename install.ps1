@@ -16,6 +16,9 @@ $shim = Join-Path $dest 'tui.cmd'
 $content = "@echo off`r`ncall `"$launcher`" %*`r`n"
 $utf8 = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText($shim, $content, $utf8)
+$account = if ($env:USERDOMAIN) { "$env:USERDOMAIN\$env:USERNAME" } else { $env:USERNAME }
+icacls $shim /inheritance:r /grant:r "${account}:(F)" "SYSTEM:(F)" | Out-Null
+icacls $dest /inheritance:r /grant:r "${account}:(OI)(CI)(F)" "SYSTEM:(OI)(CI)(F)" | Out-Null
 
 $user = [Environment]::GetEnvironmentVariable('Path', 'User')
 if ($null -eq $user) { $user = '' }

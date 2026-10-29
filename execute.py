@@ -1,7 +1,7 @@
 """Run one submitted line in a fresh foreground shell.
 
-Windows runs ``%SystemRoot%\\System32\\cmd.exe /d /c`` with the submitted
-line. Linux runs ``/bin/sh -c`` (or ``/usr/bin/sh -c`` when ``/bin/sh`` is
+Windows runs System32 ``cmd.exe /d /s /c`` with the submitted line as one
+argument. Linux runs ``/bin/sh -c`` (or ``/usr/bin/sh -c`` when ``/bin/sh`` is
 missing). Each submission starts a new shell process.
 
 The Python process environment is passed through. This does not attach to
@@ -20,7 +20,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from commands import command_origin, decode_console_bytes, powershell_executable, prefer_english
+from commands import (
+    command_origin,
+    decode_console_bytes,
+    powershell_executable,
+    prefer_english,
+    system_executable,
+)
 from completion import parse_argv
 
 _LOCAL_COMMANDS = frozenset({"help", "clear", "exit", "cd"})
@@ -123,8 +129,7 @@ def classify(text: str) -> tuple[str, list[str]]:
 
 
 def windows_shell() -> str:
-    system_root = os.environ.get("SystemRoot", r"C:\Windows")
-    return str(Path(system_root) / "System32" / "cmd.exe")
+    return system_executable("cmd.exe")
 
 
 def posix_shell() -> str:
@@ -146,7 +151,10 @@ def shell_launch(command: str, platform: str | None = None) -> ShellLaunch:
                 [executable, "-NoProfile", "-Command", command],
             )
         executable = windows_shell()
-        command_line = f'"{executable}" /d /c "{command}"'
+        # /s makes cmd strip one pair of wrapping quotes and keep quotes
+        # inside the submitted line. list2cmdline would escape those quotes
+        # in a way cmd does not understand.
+        command_line = f'"{executable}" /d /s /c "{command}"'
         return ShellLaunch(executable, command_line, None)
     executable = posix_shell()
     return ShellLaunch(executable, None, [executable, "-c", command])

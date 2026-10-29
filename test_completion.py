@@ -641,7 +641,7 @@ class GitParseTests(CompletionTestCase):
         previous = git_commands._help_commands
         git_commands._help_commands = None
         try:
-            with mock.patch("git_commands.shutil.which", return_value=None):
+            with mock.patch("git_commands._git_executable", return_value=None):
                 names = [name for name, _description in git_commands.git_commands()]
         finally:
             git_commands._help_commands = previous

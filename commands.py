@@ -229,9 +229,96 @@ def _path_commands() -> list[str]:
     return list(found.values())
 
 
+def _windows_directory_from_api(kind: str) -> str | None:
+    """Real Windows or System32 directory. This does not read SystemRoot."""
+    if os.name != "nt":
+        return None
+    getter_name = "GetSystemDirectoryW" if kind == "system" else "GetWindowsDirectoryW"
+    try:
+        import ctypes
+
+        buffer = ctypes.create_unicode_buffer(260)
+        length = int(getattr(ctypes.windll.kernel32, getter_name)(buffer, 260))
+    except (AttributeError, OSError, ValueError):
+        return None
+    if length <= 0:
+        return None
+    return buffer.value
+
+
+def system_directory() -> str | None:
+    """System32 from Windows, or None when this is not Windows.
+
+    A SystemRoot value that is not the real Windows directory is ignored.
+    """
+    system = _windows_directory_from_api("system")
+    if system:
+        return system
+    windows = _windows_directory_from_api("windows")
+    env_root = os.environ.get("SystemRoot")
+    if windows and env_root:
+        try:
+            if Path(env_root).resolve() != Path(windows).resolve():
+                env_root = None
+        except OSError:
+            env_root = None
+    root = windows or env_root
+    if not root:
+        return None
+    return str(Path(root) / "System32")
+
+
+def system_executable(name: str) -> str:
+    directory = system_directory()
+    if directory:
+        return str(Path(directory) / name)
+    return str(Path(r"C:\Windows") / "System32" / name)
+
+
 def powershell_executable() -> str:
-    root = os.environ.get("SystemRoot", r"C:\Windows")
-    return str(Path(root) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe")
+    return str(
+        Path(system_executable("cmd.exe")).parent
+        / "WindowsPowerShell"
+        / "v1.0"
+        / "powershell.exe"
+    )
+
+
+def is_windows_admin() -> bool:
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except (AttributeError, OSError):
+        return False
+
+
+def restrict_to_current_user(path: str) -> None:
+    """Leave the file readable by the current user only. Failures are ignored."""
+    if os.name != "nt":
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            return
+        return
+    account = os.environ.get("USERNAME", "")
+    domain = os.environ.get("USERDOMAIN", "")
+    if domain and account:
+        account = f"{domain}\\{account}"
+    icacls = system_executable("icacls.exe")
+    if not account or not os.path.isfile(icacls):
+        return
+    try:
+        subprocess.run(
+            [icacls, path, "/inheritance:r", "/grant:r", f"{account}:(F)", "SYSTEM:(F)"],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return
 
 
 def _powershell_commands() -> list[tuple[str, str]]:
@@ -458,8 +545,7 @@ def _next_netsh_words(
 def _run_netsh_help(context: Sequence[str]) -> str:
     if os.name != "nt":
         return ""
-    root = os.environ.get("SystemRoot", r"C:\Windows")
-    executable = str(Path(root) / "System32" / "netsh.exe")
+    executable = system_executable("netsh.exe")
     if not os.path.isfile(executable):
         return ""
     prefer_english()
@@ -562,15 +648,21 @@ def _parse_switches(text: str) -> list[tuple[str, str]]:
 
 
 def _read_switch_help(command: str) -> str:
+    """Read switch help without launching a program found on PATH.
+
+    A System32 program is called by its full path. A cmd builtin is read
+    through System32 cmd. Other names contribute no live help.
+    """
     prefer_english()
     chunks: list[str] = []
-    root = os.environ.get("SystemRoot", r"C:\Windows")
-    cmd = str(Path(root) / "System32" / "cmd.exe")
     attempts: list[list[str]] = []
-    located = _which(command)
-    if located:
-        attempts.append([located, "/?"])
-    attempts.append([cmd, "/d", "/c", f"{command} /?"])
+    directory = system_directory()
+    if directory:
+        program = Path(directory) / f"{command}.exe"
+        if program.is_file():
+            attempts.append([str(program), "/?"])
+    if command.casefold() in _CMD_KEYS:
+        attempts.append([system_executable("cmd.exe"), "/d", "/s", "/c", f"{command} /?"])
     for args in attempts:
         try:
             completed = subprocess.run(
@@ -586,15 +678,3 @@ def _read_switch_help(command: str) -> str:
         if _parse_switches("\n".join(chunks)):
             break
     return "\n".join(chunks)
-
-
-def _which(command: str) -> str | None:
-    suffixes = os.environ.get("PATHEXT", ".EXE;.CMD;.BAT;.COM").split(";")
-    for directory in os.environ.get("PATH", "").split(os.pathsep):
-        if not directory:
-            continue
-        for suffix in suffixes:
-            candidate = Path(directory) / f"{command}{suffix}"
-            if candidate.is_file():
-                return str(candidate)
-    return None

@@ -19,8 +19,11 @@ from prompt_toolkit.styles import Style
 from commands import (
     INTERACTIVE_PROGRAMS,
     is_context_switch,
+    is_windows_admin,
     netsh_child_commands,
     prefer_english,
+    restrict_to_current_user,
+    system_executable,
 )
 from completion import CommandCompleter, parse_argv, tokenize
 from execute import CommandResult, _has_unquoted_operator, classify, format_status, run_shell
@@ -36,14 +39,19 @@ commands
   other lines          run in the foreground shell
 
 shell
-  Windows cmd          %SystemRoot%\\System32\\cmd.exe /d /c
-  Windows PowerShell   powershell.exe -NoProfile -Command
+  Windows cmd          System32\\cmd.exe /d /s /c
+  Windows PowerShell   System32 powershell.exe -NoProfile -Command
                        names that exist only in PowerShell
   netsh, diskpart      stay in this prompt. exit returns
   Linux                /bin/sh -c
 
+history
+  saved lines          home directory .tui_helper_history
+  leading space        that line is not saved
+  passwords            stay in that file as plain text
+
 keys
-  typing               open the menu. does not run a command
+  typing               open the menu. system help may be read
   Ctrl+Space           open the menu
   Up/Down              select a candidate, or history when the menu is closed
   Tab                  insert the selection, or open the menu
@@ -78,6 +86,11 @@ class SafeFileHistory(FileHistory):
         except OSError:
             return
 
+    def append_string(self, string: str) -> None:
+        if string.startswith(" "):
+            return
+        super().append_string(string)
+
     def store_string(self, string: str) -> None:
         try:
             super().store_string(string)
@@ -91,6 +104,7 @@ def create_history() -> History:
         path = Path.home() / HISTORY_NAME
         with path.open("a", encoding="utf-8"):
             pass
+        restrict_to_current_user(str(path))
     except (OSError, RuntimeError):
         return InMemoryHistory()
     return SafeFileHistory(path)
@@ -249,11 +263,17 @@ def run_diskpart_script(body: str) -> CommandResult:
     diskpart.exe rejects a normal token before it reads the script. Call it
     directly so the script path is not damaged by cmd quoting.
     """
+    if is_windows_admin():
+        print(
+            "diskpart: this program is already running as administrator. "
+            "diskpart uses that permission."
+        )
     script = body.strip() + "\r\nexit\r\n"
     fd, path = tempfile.mkstemp(prefix="tui-diskpart-", suffix=".txt")
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\r\n") as handle:
             handle.write(script)
+        restrict_to_current_user(path)
         return _run_diskpart_file(path)
     finally:
         try:
@@ -263,8 +283,7 @@ def run_diskpart_script(body: str) -> CommandResult:
 
 
 def _diskpart_executable() -> str:
-    root = os.environ.get("SystemRoot", r"C:\Windows")
-    return str(Path(root) / "System32" / "diskpart.exe")
+    return system_executable("diskpart.exe")
 
 
 def _run_diskpart_file(path: str) -> CommandResult:
