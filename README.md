@@ -8,11 +8,9 @@ Download `tui.exe` if you only want to run the program. Python is not required f
 
 ## Download the exe
 
-Open the latest release and download `tui.exe`:
+No clone or Python is required. Download `tui.exe` from the latest release and run it:
 
 https://github.com/N3skafe/tui_helper/releases
-
-Save it in any folder. No clone, virtual environment, or pip install is required. The release also includes `tui.exe.sha256`, the SHA-256 of that file.
 
 cmd, in that folder:
 
@@ -26,9 +24,37 @@ PowerShell, in that folder:
 .\tui.exe
 ```
 
-PowerShell does not run a program in the current folder unless the name starts with `.\`. After the exe is on your user PATH, both cmd and PowerShell accept `tui` from any folder. Copy `tui.exe` to `%LOCALAPPDATA%\tui_helper` if that directory is already on PATH, then open a new terminal.
+You can also double-click `tui.exe`. The first run copies the program to `%LOCALAPPDATA%\tui_helper\tui.exe`, removes an old `tui.cmd` in that folder, and adds the folder to your user PATH. This window is the program. Close and reopen other terminals, then run `tui` from any folder in both cmd and PowerShell.
 
-The exe is attached when a GitHub release is published. To build it on a Windows machine instead, install the source setup below and run `.\build.ps1`. The result is `dist\tui.exe`.
+The release also includes `tui.exe.sha256`. To install without saving the file yourself, from PowerShell 5.1 or PowerShell 7:
+
+```powershell
+iex (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/N3skafe/tui_helper/main/install-release.ps1')
+```
+
+That command works after `install-release.ps1` is on the `main` branch. It checks the checksum when the release has one, updates the user PATH, and updates the current PowerShell session.
+
+If you already have this repository, the same installer is:
+
+cmd, in this folder:
+
+```bat
+install-release.cmd
+```
+
+PowerShell, in this folder:
+
+```powershell
+.\install-release.ps1
+```
+
+The installer writes `%LOCALAPPDATA%\tui_helper\tui.exe` and removes an old `tui.cmd` shim in that folder so it cannot be selected instead. It does not leave a background process running.
+
+You can still download the files by hand from the latest release:
+
+https://github.com/N3skafe/tui_helper/releases
+
+`tui.exe.sha256` is the SHA-256 of `tui.exe`. To build the exe on a Windows machine instead, install the source setup below and run `.\build.ps1`. The result is `dist\tui.exe`.
 
 ## Get the source
 
@@ -66,7 +92,7 @@ PowerShell, in this folder:
 .\tui
 ```
 
-To type `tui` from any folder in both cmd and PowerShell, register the command once.
+Developers who want the source checkout on PATH, instead of the release exe, register it once. This requires the virtual environment above. It writes `%LOCALAPPDATA%\tui_helper\tui.cmd`, which calls this folder's `tui.cmd`. If `tui.exe` is already in that folder, Windows runs the exe first.
 
 cmd, in this folder:
 
@@ -80,7 +106,7 @@ PowerShell, in this folder:
 .\install.cmd
 ```
 
-Close that window and open a new cmd or PowerShell window. Then `tui` works in both. The installer writes `%LOCALAPPDATA%\tui_helper\tui.cmd` and adds that directory to the user PATH. It does not leave a background process running. The prompt still opens in the folder where you type `tui`.
+Close that window and open a new cmd or PowerShell window. Then `tui` works in both. The prompt still opens in the folder where you type `tui`.
 
 You can also start it without installing the command:
 
@@ -205,11 +231,9 @@ This project is licensed under the MIT License. See `LICENSE`. You may use, modi
 
 ## exe 받기
 
-최신 릴리스에서 `tui.exe`를 받습니다.
+클론이나 Python은 필요 없습니다. 최신 릴리스에서 `tui.exe`를 받아 실행합니다.
 
 https://github.com/N3skafe/tui_helper/releases
-
-아무 폴더에 저장합니다. 저장소를 클론하거나 가상환경, pip 설치는 필요 없습니다. 릴리스에는 그 파일의 SHA-256인 `tui.exe.sha256`도 있습니다.
 
 cmd, 그 폴더에서:
 
@@ -223,9 +247,37 @@ PowerShell, 그 폴더에서:
 .\tui.exe
 ```
 
-PowerShell은 이름이 `.\`로 시작하지 않으면 현재 폴더의 프로그램을 실행하지 않습니다. exe가 사용자 PATH에 있으면 cmd와 PowerShell 모두 어느 폴더에서나 `tui`로 켭니다. 그 디렉터리가 이미 PATH에 있다면 `tui.exe`를 `%LOCALAPPDATA%\tui_helper`에 복사한 뒤 터미널을 새로 엽니다.
+`tui.exe`를 두 번 눌러도 됩니다. 첫 실행은 프로그램을 `%LOCALAPPDATA%\tui_helper\tui.exe`로 복사하고, 그 폴더의 예전 `tui.cmd`를 지우고, 사용자 PATH에 그 폴더를 넣습니다. 지금 창이 그 프로그램입니다. 다른 터미널은 닫았다가 다시 연 다음, cmd와 PowerShell 어디서나 `tui`를 실행합니다.
 
-exe는 GitHub 릴리스를 게시할 때 첨부됩니다. Windows에서 직접 만들려면 아래 소스 준비를 마친 뒤 `.\build.ps1`을 실행합니다. 결과는 `dist\tui.exe`입니다.
+릴리스에는 `tui.exe.sha256`도 있습니다. 파일을 직접 저장하지 않고 설치하려면 PowerShell 5.1 또는 PowerShell 7에서:
+
+```powershell
+iex (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/N3skafe/tui_helper/main/install-release.ps1')
+```
+
+이 명령은 `install-release.ps1`이 `main` 브랜치에 올라간 뒤에 동작합니다. 릴리스에 체크섬이 있으면 확인하고, 사용자 PATH와 지금 연 PowerShell 세션을 갱신합니다.
+
+이 저장소가 이미 있으면 같은 설치를 이렇게 실행합니다.
+
+cmd, 이 폴더에서:
+
+```bat
+install-release.cmd
+```
+
+PowerShell, 이 폴더에서:
+
+```powershell
+.\install-release.ps1
+```
+
+설치는 `%LOCALAPPDATA%\tui_helper\tui.exe`를 쓰고, 그 폴더의 예전 `tui.cmd` 바로 가기는 지워서 실행 파일이 선택되게 합니다. 백그라운드 프로세스는 남기지 않습니다.
+
+파일을 직접 받을 수도 있습니다.
+
+https://github.com/N3skafe/tui_helper/releases
+
+`tui.exe.sha256`은 `tui.exe`의 SHA-256입니다. Windows에서 exe를 직접 만들려면 아래 소스 준비를 마친 뒤 `.\build.ps1`을 실행합니다. 결과는 `dist\tui.exe`입니다.
 
 ## 소스 받기
 
@@ -263,7 +315,7 @@ PowerShell, 이 폴더에서:
 .\tui
 ```
 
-어느 폴더에서나 cmd와 PowerShell 모두 `tui`로 켜려면 명령을 한 번 등록합니다.
+소스를 PATH에 올리고 릴리스 exe 대신 그 소스를 실행하려면 명령을 한 번 등록합니다. 위의 가상환경이 필요합니다. `%LOCALAPPDATA%\tui_helper\tui.cmd`를 만들며, 그 파일은 이 폴더의 `tui.cmd`를 부릅니다. 같은 폴더에 `tui.exe`가 있으면 Windows는 exe를 먼저 실행합니다.
 
 cmd, 이 폴더에서:
 
@@ -277,7 +329,7 @@ PowerShell, 이 폴더에서:
 .\install.cmd
 ```
 
-그 창을 닫고 cmd 또는 PowerShell을 새로 엽니다. 그 다음 `tui`는 양쪽에서 동작합니다. 설치는 `%LOCALAPPDATA%\tui_helper\tui.cmd`를 만들고, 그 디렉터리를 사용자 PATH에 넣습니다. 백그라운드 프로세스를 남겨 두지 않습니다. 프롬프트는 `tui`를 친 폴더에서 열립니다.
+그 창을 닫고 cmd 또는 PowerShell을 새로 엽니다. 그 다음 `tui`는 양쪽에서 동작합니다. 프롬프트는 `tui`를 친 폴더에서 열립니다.
 
 명령을 등록하지 않고 직접 실행할 수도 있습니다.
 

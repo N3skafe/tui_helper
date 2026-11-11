@@ -28,6 +28,7 @@ from main import (
     run_diskpart_script,
     step_nested,
 )
+from release_install import ensure_frozen_install, merge_path_entries
 
 
 def _python_line(script: Path) -> str:
@@ -197,6 +198,48 @@ class DispatchTests(unittest.TestCase):
         ):
             run_diskpart_script("list disk")
         self.assertIn("administrator", stdout.getvalue().casefold())
+
+    def test_path_entry_is_appended_once(self):
+        updated, changed = merge_path_entries(r"C:\Windows", r"C:\Users\a\tui_helper")
+        self.assertTrue(changed)
+        self.assertTrue(updated.endswith(r"C:\Users\a\tui_helper"))
+        deduped, changed_duplicate = merge_path_entries(
+            updated + r";C:\Users\a\tui_helper\\", r"C:\Users\a\tui_helper"
+        )
+        self.assertTrue(changed_duplicate)
+        self.assertEqual(deduped.casefold().count("tui_helper"), 1)
+        again, changed_again = merge_path_entries(deduped, r"C:\Users\a\tui_helper")
+        self.assertFalse(changed_again)
+        self.assertEqual(again, deduped)
+
+    def test_source_run_does_not_register_an_exe(self):
+        with mock.patch("release_install._install_executable") as install:
+            ensure_frozen_install()
+        install.assert_not_called()
+
+    def test_frozen_exe_copies_itself_and_removes_the_shim(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = Path(directory.name)
+        source = root / "download" / "tui.exe"
+        source.parent.mkdir()
+        source.write_bytes(b"MZ" + b"x" * 32)
+        dest = root / "installed"
+        dest.mkdir()
+        shim = dest / "tui.cmd"
+        shim.write_text("old", encoding="ascii")
+        with (
+            mock.patch("release_install.sys.frozen", True, create=True),
+            mock.patch("release_install.sys.executable", str(source)),
+            mock.patch("release_install.install_directory", return_value=dest),
+            mock.patch("release_install.restrict_to_current_user"),
+            mock.patch("release_install._ensure_user_path", return_value=True),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            ensure_frozen_install()
+        self.assertEqual((dest / "tui.exe").read_bytes(), source.read_bytes())
+        self.assertFalse(shim.exists())
+        self.assertIn("Installed tui", stdout.getvalue())
 
 
 class ExecutionTests(unittest.TestCase):
@@ -381,7 +424,16 @@ class DirectoryTests(unittest.TestCase):
 
 class CompletionDoesNotExecuteTests(unittest.TestCase):
     def test_completion_acceptance_does_not_execute(self):
-        with mock.patch("execute.subprocess.Popen") as popen:
+        with (
+            mock.patch("execute.subprocess.Popen") as popen,
+            mock.patch(
+                "completion.git_commands",
+                return_value=[
+                    ("status", "Show the working tree status"),
+                    ("stash", "Stash changes"),
+                ],
+            ),
+        ):
             document = Document("git sta")
             completions = list(
                 CommandCompleter().get_completions(

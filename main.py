@@ -27,6 +27,7 @@ from commands import (
 )
 from completion import CommandCompleter, parse_argv, tokenize
 from execute import CommandResult, _has_unquoted_operator, classify, format_status, run_shell
+from release_install import ensure_frozen_install
 
 HISTORY_NAME = ".tui_helper_history"
 
@@ -348,6 +349,7 @@ def _resume_completion(completer: CommandCompleter):
 
 
 def main() -> None:
+    ensure_frozen_install()
     completer = CommandCompleter()
     session: PromptSession[str] = PromptSession(
         message="> ",

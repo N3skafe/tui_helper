@@ -1,4 +1,5 @@
-# Register the tui command for the current user.
+# Source installer for developers. Requires .venv and writes tui.cmd.
+# End users who want the release exe should run install-release.cmd instead.
 # cmd and PowerShell both find tui.cmd on PATH. A new terminal is required.
 
 $ErrorActionPreference = 'Stop'
@@ -37,6 +38,12 @@ if (-not $found) {
     Write-Host "Added to the user PATH: $dest"
 } else {
     Write-Host "The user PATH already contains $dest"
+}
+
+$installedExe = Join-Path $dest 'tui.exe'
+if (Test-Path -LiteralPath $installedExe) {
+    Write-Host 'Note: tui.exe is also in this folder. Windows runs tui.exe before tui.cmd.'
+    Write-Host 'Remove tui.exe if you want this source shim to run instead.'
 }
 
 Write-Host "Installed: $shim"
