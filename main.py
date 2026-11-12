@@ -42,7 +42,10 @@ commands
 shell
   Windows cmd          System32\\cmd.exe /d /s /c
   Windows PowerShell   System32 powershell.exe -NoProfile -Command
-                       names that exist only in PowerShell
+                       PowerShell-only names and syntax such as $var = ...
+                       if ($x), [string]$x = ...
+                       a trailing backtick does not continue the next line
+                       variables and functions do not last to the next line
   netsh, diskpart      stay in this prompt. exit returns
   Linux                /bin/sh -c
 

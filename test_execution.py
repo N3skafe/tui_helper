@@ -17,7 +17,15 @@ from prompt_toolkit.document import Document
 
 from completion import CommandCompleter, apply_completion
 from commands import command_switches, system_executable
-from execute import CommandResult, classify, format_status, run_shell, shell_launch
+from execute import (
+    CommandResult,
+    classify,
+    format_status,
+    has_trailing_continuation_backtick,
+    looks_like_powershell,
+    run_shell,
+    shell_launch,
+)
 from main import (
     SafeFileHistory,
     change_directory,
@@ -158,6 +166,74 @@ class DispatchTests(unittest.TestCase):
             )
             cmd_program = shell_launch("netsh", platform="nt")
             self.assertTrue(cmd_program.executable.lower().endswith("cmd.exe"))
+
+    def test_powershell_syntax_routes_to_powershell_and_cmd_stays_cmd(self):
+        samples = [
+            '$ServerIP = Read-Host "172.29.137.11"',
+            '$ServerIP = Read-Host "172.29.137.11" `',
+            "$env:PATH",
+            "$_",
+            "foreach { $_ }",
+            "& { 1 }",
+            "@{a=1}",
+            "function Foo {}",
+            "param([string]$x)",
+            "if ($true) { 1 }",
+            "foreach ($i in 1..3) { $i }",
+            '[string]$x = "a"',
+            ". { 1 }",
+        ]
+        if os.name == "nt":
+            samples.append("Write-Output hello-from-ps")
+        for line in samples:
+            launch = shell_launch(line, platform="nt")
+            self.assertTrue(
+                launch.executable.lower().endswith("powershell.exe"),
+                line,
+            )
+            self.assertEqual(
+                launch.argv,
+                [launch.executable, "-NoProfile", "-Command", line],
+            )
+            self.assertTrue(looks_like_powershell(line) or line.startswith("Write-Output"))
+
+        for line in ("echo hi", "dir", "netsh", "echo $hi", r"for %i in (1 2 3) do echo %i"):
+            launch = shell_launch(line, platform="nt")
+            self.assertTrue(launch.executable.lower().endswith("cmd.exe"), line)
+            self.assertIsNone(launch.argv)
+
+        backtick = '$ServerIP = Read-Host "172.29.137.11" `'
+        self.assertTrue(has_trailing_continuation_backtick(backtick))
+        self.assertFalse(has_trailing_continuation_backtick('$ServerIP = "ok"'))
+        posix = shell_launch('$ServerIP = "ok"', platform="posix")
+        self.assertEqual(posix.argv[1:], ["-c", '$ServerIP = "ok"'])
+
+    def test_trailing_backtick_hint_does_not_rewrite_the_line(self):
+        line = '$ServerIP = Read-Host "172.29.137.11" `'
+
+        class FakeProcess:
+            returncode = 0
+
+            def communicate(self, timeout=None):
+                return b"", b""
+
+            def poll(self):
+                return 0
+
+            def wait(self, timeout=None):
+                return 0
+
+        with (
+            mock.patch("execute.subprocess.Popen", return_value=FakeProcess()),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            result = run_shell(line, capture=True)
+        self.assertEqual(result.command, line)
+        if os.name == "nt":
+            self.assertIn("backtick", stdout.getvalue().casefold())
+            self.assertIn("one line", stdout.getvalue().casefold())
+        else:
+            self.assertNotIn("backtick", stdout.getvalue().casefold())
 
     @unittest.skipUnless(os.name == "nt", "cmd quote handling is Windows-only")
     def test_cmd_keeps_quotes_inside_the_line(self):

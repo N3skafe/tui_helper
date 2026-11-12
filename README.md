@@ -178,7 +178,7 @@ After submit, only `help`, `clear`, `exit`, and `cd` are handled here. Every oth
 The submitted line is passed unchanged to a new shell process. The program does not attach to the parent cmd or PowerShell session, and it does not load that session's functions, aliases, doskey macros, AutoRun, or unexported shell variables.
 
 - Windows cmd commands and PATH programs: `%SystemRoot%\System32\cmd.exe /d /c` plus the submitted line. `/d` skips CMD AutoRun.
-- Names that exist only in Windows PowerShell: `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -Command` plus the submitted line. This is not the parent PowerShell session.
+- PowerShell-only names, and lines that look like PowerShell (`$var = ...`, `if ($x)`, `[string]$x = ...`, `$_`, `@{`, `function`): `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -Command` plus the submitted line. This is not the parent PowerShell session. Variables and functions do not persist across submissions. A trailing backtick does not continue onto the next line.
 - Linux: `/bin/sh -c` plus the submitted line, or `/usr/bin/sh -c` when `/bin/sh` is missing. This is not a bash login shell.
 
 The Python process environment, including `PATH`, is passed to the child. Values changed with `set` or `export` disappear when that process exits. The next submission starts a new shell. Use this program's `cd` when the directory should last. A `cd` inside the shell lasts only for that process.
@@ -401,7 +401,7 @@ Windows에서 첫 단어를 치면 다음도 앞글자로 맞습니다.
 제출된 줄은 고치지 않고 새 셸 프로세스에 넘깁니다. 부모 cmd나 PowerShell 세션에 붙지 않고, 그 세션의 함수, 별칭, doskey, AutoRun, 내보내지 않은 셸 변수를 불러오지 않습니다.
 
 - Windows cmd 명령과 PATH 프로그램: `%SystemRoot%\System32\cmd.exe /d /c`와 제출된 줄. `/d`는 CMD AutoRun을 건너뜁니다.
-- Windows PowerShell에만 있는 이름: `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -Command`와 제출된 줄. 부모 PowerShell 세션은 아닙니다.
+- PowerShell에만 있는 이름과 PowerShell처럼 보이는 줄(`$var = ...`, `if ($x)`, `[string]$x = ...`, `$_`, `@{`, `function`): `%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -Command`와 제출된 줄. 부모 PowerShell 세션은 아닙니다. 변수와 함수는 다음 제출까지 유지되지 않습니다. 줄 끝의 백틱은 다음 줄로 이어지지 않습니다.
 - Linux: `/bin/sh -c`와 제출된 줄. `/bin/sh`가 없으면 `/usr/bin/sh -c`입니다. bash 로그인 셸이 아닙니다.
 
 Python 프로세스가 가진 환경 변수(`PATH` 등)는 자식에 전달됩니다. 명령 안에서 `set`이나 `export`로 바꾼 값은 그 프로세스가 끝나면 사라집니다. 다음 제출은 새 셸입니다. 디렉터리를 다음 명령까지 유지하려면 이 프로그램의 `cd`를 사용합니다. 셸 안의 `cd`는 그 프로세스 안에서만 적용됩니다.
